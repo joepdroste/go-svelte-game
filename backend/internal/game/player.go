@@ -138,6 +138,25 @@ func (p *Player) TakeDamage(amount int) bool {
 	return false
 }
 
+func (p *Player) Heal(amount int) (actualHealAmount int) {
+	if amount <= 0 {
+		return 0
+	}
+	if p.CurrentHP >= p.MaxHP {
+		return 0
+	}
+
+	potentialHP := p.CurrentHP + amount
+	if potentialHP > p.MaxHP {
+		actualHealAmount = p.MaxHP - p.CurrentHP
+		p.CurrentHP = p.MaxHP
+	} else {
+		actualHealAmount = amount
+		p.CurrentHP = potentialHP
+	}
+	return actualHealAmount
+}
+
 func (p *Player) ResetToLevel1() {
 	p.Level = 1
 	p.XP = 0

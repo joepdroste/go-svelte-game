@@ -422,6 +422,71 @@ func (c *Client) processIncomingMessage(genericMsg protocol.GenericMessage) {
 				}
 			}
 		}
+	case protocol.C2S_MessageTypeUsePotion:
+		log.Printf("Player %s attempting to use a potion.", c.player.GetID())
+
+		var actualHealAmount int
+		var notificationMsg string
+
+		c.world.Mu.Lock()
+		if c.player.CurrentHP <= 0 {
+			log.Printf("Player %s cannot use potion, is defeated.", c.player.GetID())
+			notificationMsg = "You are defeated and cannot use a potion."
+		} else if c.player.CurrentHP >= c.player.MaxHP {
+			log.Printf("Player %s is already at full health.", c.player.GetID())
+			notificationMsg = "You are already at full health."
+
+		} else {
+			potionHealAmount := 30
+			actualHealAmount = c.player.Heal(potionHealAmount)
+			if actualHealAmount > 0 {
+				notificationMsg = fmt.Sprintf("You healed for %d HP.", actualHealAmount)
+			} else {
+				notificationMsg = "You feel no different."
+			}
+		}
+
+		statUpdatePayload := protocol.S2C_PlayerStatUpdatePayload{
+			PlayerID:      c.player.GetID(),
+			Level:         c.player.Level,
+			XP:            c.player.XP,
+			XPToNextLevel: c.player.XPToNextLevel,
+			MaxHP:         c.player.MaxHP,
+			CurrentHP:     c.player.CurrentHP,
+			Attack:        c.player.Attack,
+			Defense:       c.player.Defense,
+		}
+		c.world.Mu.Unlock()
+
+		playerStatMsg := protocol.GenericMessage{Type: protocol.S2C_MessageTypePlayerStatUpdate, Payload: statUpdatePayload}
+		jsonPlayerStatMsg, errPSU := json.Marshal(playerStatMsg)
+		if errPSU == nil {
+			c.hub.Broadcast(jsonPlayerStatMsg)
+		} else {
+			log.Printf("Error marshaling player stat update after potion use: %v", errPSU)
+		}
+
+		if notificationMsg != "" {
+			notificationPayload := protocol.S2C_NotificationPayload{
+				Message: notificationMsg,
+				Level:   "info",
+			}
+			if actualHealAmount > 0 {
+				notificationPayload.Level = "success"
+			}
+
+			notifyMsg := protocol.GenericMessage{Type: protocol.S2C_MessageTypeNotification, Payload: notificationPayload}
+			jsonNotifyMsg, errNotify := json.Marshal(notifyMsg)
+			if errNotify == nil {
+				select {
+				case c.send <- jsonNotifyMsg:
+				default:
+					log.Printf("Failed to send potion use notification to %s: channel full/closed", c.player.GetID())
+				}
+			} else {
+				log.Printf("Error marshaling potion notification: %v", errNotify)
+			}
+		}
 	default:
 		log.Printf("Player %s: Received unknown message type '%s'", c.player.GetID(), genericMsg.Type)
 	}

@@ -18,6 +18,9 @@ type C2S_AttackPayload struct {
 	TargetID string `json:"target_id"`
 }
 
+type C2S_UsePotionPayload struct {
+}
+
 // --- Server-to-Client (S2C) Message Payloads ---
 type S2C_TileData struct {
 	Type TileType `json:"type"`
@@ -118,6 +121,11 @@ type S2C_PlayerStatUpdatePayload struct {
 	Defense       int    `json:"defense"`
 }
 
+type S2C_NotificationPayload struct {
+	Message string `json:"message"`
+	Level   string `json:"level"`
+}
+
 // --- Message Type Constants ---
 // C2S (Client to Server) Message Types
 const (
@@ -136,4 +144,6 @@ const (
 	S2C_MessageTypeCombatInitiated  = "combat_initiated"
 	S2C_MessageTypeCombatUpdate     = "combat_update"
 	S2C_MessageTypePlayerStatUpdate = "player_stat_update"
+	C2S_MessageTypeUsePotion        = "use_potion"
+	S2C_MessageTypeNotification     = "notification"
 )

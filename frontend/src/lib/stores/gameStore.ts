@@ -14,6 +14,7 @@ import {
 	type S2C_CombatUpdatePayload,
 	type S2C_EntityRemovedPayload,
 	type S2C_PlayerStatUpdatePayload,
+	type S2C_NotificationPayload,
 } from '$lib/protocol/messages';
 import { websocketService } from '$lib/services/websocketService';
 import {
@@ -24,7 +25,8 @@ import {
 	S2C_MessageTypeCombatInitiated,
 	S2C_MessageTypeCombatUpdate,
 	S2C_MessageTypeEntityRemoved,
-	S2C_MessageTypePlayerStatUpdate
+	S2C_MessageTypePlayerStatUpdate,
+	S2C_MessageTypeNotification,
 } from '$lib/protocol/messages';
 
 export const selfId: Writable<string | null> = writable(null);
@@ -51,6 +53,9 @@ export interface ActiveCombatInfo {
     playerId: string;
     monsterId: string;
 }
+
+export const notifications: Writable<Array<{id: number, message: string, level: string}>> = writable([]);
+let notificationIdCounter = 0;
 
 export function initializeGameStoreListeners() {
 	// Initial State
@@ -226,5 +231,15 @@ export function initializeGameStoreListeners() {
 			}
 			return new Map(currentPlayers);
 		});
+	});
+
+	// Notification
+	websocketService.onMessage<S2C_NotificationPayload>(S2C_MessageTypeNotification, (payload) => {
+		console.log('Notification:', payload.message, `(${payload.level})`);
+		const newNotification = { id: notificationIdCounter++, message: payload.message, level: payload.level };
+		notifications.update(current => [newNotification, ...current.slice(0, 4)]);
+		setTimeout(() => {
+			notifications.update(current => current.filter(n => n.id !== newNotification.id));
+		}, 5000);
 	});
 }

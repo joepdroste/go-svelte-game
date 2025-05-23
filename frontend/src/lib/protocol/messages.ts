@@ -24,6 +24,9 @@ export interface C2S_MovePayload {
 export interface C2S_AttackPayload {
 	target_id: string;
 }
+export interface C2S_UsePotionPayload {
+
+}
 
 // --- S2C Payloads & DTOs ---
 export interface S2C_TileData { type: TileType; }
@@ -98,10 +101,16 @@ export interface S2C_PlayerStatUpdatePayload {
 	defense: number;
 }
 
+export interface S2C_NotificationPayload {
+	message: string;
+	level: string;
+}
+
 // --- Message Type Constants ---
 // C2S
 export const C2S_MessageTypeMove = "move";
 export const C2S_MessageTypeAttack = "attack";
+export const C2S_MessageTypeUsePotion = "use_potion"
 
 // S2C
 export const S2C_MessageTypeInitialState = "initial_state";
@@ -113,3 +122,4 @@ export const S2C_MessageTypeEntityRemoved = "entity_removed";
 export const S2C_MessageTypeCombatInitiated = "combat_initiated";
 export const S2C_MessageTypeCombatUpdate = "combat_update";
 export const S2C_MessageTypePlayerStatUpdate = "player_stat_update";
+export const S2C_MessageTypeNotification = "notification"
